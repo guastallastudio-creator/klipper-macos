@@ -1,0 +1,4 @@
+#!/bin/sh
+# Moonraker calls the Linux "ip" command to list network interfaces.
+# macOS has no "ip": answer with an empty JSON list so Moonraker does not log errors.
+echo "[]"

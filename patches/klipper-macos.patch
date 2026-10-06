@@ -1,0 +1,41 @@
+diff --git a/klippy/chelper/pyhelper.c b/klippy/chelper/pyhelper.c
+--- a/klippy/chelper/pyhelper.c
++++ b/klippy/chelper/pyhelper.c
+@@ -10,7 +10,11 @@
+ #include <stdio.h> // fprintf
+ #include <string.h> // strerror
+ #include <time.h> // struct timespec
++#ifdef __APPLE__ // macOS has no prctl(): use pthread_setname_np()
++#include <pthread.h>
++#else
+ #include <sys/prctl.h>  // prctl
++#endif
+ #include "compiler.h" // __visible
+ #include "pyhelper.h" // get_monotonic
+ 
+@@ -98,5 +102,9 @@ dump_string(char *outbuf, int outbuf_size, char *inbuf, int inbuf_size)
+ int __visible
+ set_thread_name(char name[16])
+ {
++#ifdef __APPLE__
++    return pthread_setname_np(name);
++#else
+     return prctl(PR_SET_NAME, name);
++#endif
+ }
+diff --git a/klippy/chelper/serialqueue.c b/klippy/chelper/serialqueue.c
+--- a/klippy/chelper/serialqueue.c
++++ b/klippy/chelper/serialqueue.c
+@@ -12,7 +12,12 @@
+ // clock times, prioritizes commands, and handles retransmissions.  A
+ // background thread is launched to do this work and minimize latency.
+ 
++#ifdef __APPLE__ // macOS has no SocketCAN: minimal struct so serialqueue.c compiles
++#include <stdint.h>
++struct can_frame { uint32_t can_id; uint8_t can_dlc; uint8_t __pad[3]; uint8_t data[8]; };
++#else
+ #include <linux/can.h> // // struct can_frame
++#endif
+ #include <math.h> // fabs
+ #include <pthread.h> // pthread_mutex_lock
+ #include <stddef.h> // offsetof
